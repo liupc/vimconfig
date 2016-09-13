@@ -1,356 +1,329 @@
-runtime! debian.vim
-"设置编码
-set encoding=utf-8
-set fencs=utf-8,ucs-bom,shift-jis,gb18030,gbk,gb2312,cp936
-set fileencodings=utf-8,ucs-bom,chinese
-
-"语言设置
-set langmenu=zh_CN.UTF-8
-
-"""""""""""""""""""""""""""""""
-" Vbundle
-"""""""""""""""""""""""""""""""
-"vbundle使用，可以用来管理插件
-     set rtp+=~/.vim/bundle/vundle/
-     call vundle#rc()
-
-     " let Vundle manage Vundle
-     " required! 
-     Bundle 'gmarik/vundle'
-
-     " My Bundles here:  /* 插件配置格式 */
-     "   
-     " original repos on github （Github网站上非vim-scripts仓库的插件，按下面格式填写）
-     "Bundle 'tpope/vim-fugitive'
-     "Bundle 'Lokaltog/vim-easymotion'
-     "Bundle 'rstacruz/sparkup', {'rtp': 'vim/'}
-     "Bundle 'tpope/vim-rails.git'
-	 Bundle 'chriskempson/tomorrow-theme'
-     " vim-scripts repos  （vim-scripts仓库里的，按下面格式填写）
-     "Bundle 'L9'
-     "Bundle 'FuzzyFinder'
-	 Bundle 'ctags.vim'
-     Bundle 'taglist.vim'
-	 Bundle 'cscope.vim'
-	 Bundle 'The-NERD-tree'
-	 "Bundle 'Solarized'
-	 Bundle 'winmanager'
-	 Bundle 'guicolorscheme.vim'
-     " non github repos   (非上面两种情况的，按下面格式填写)
-     Bundle 'git://git.wincent.com/command-t.git'
-     " ... 
-
-    
-     "                                           /** vundle命令 **/
-     " Brief help
-     " :BundleList          - list configured bundles
-     " :BundleInstall(!)    - install(update) bundles
-     " :BundleSearch(!) foo - search(or refresh cache first) for foo 
-     " :BundleClean(!)      - confirm(or auto-approve) removal of unused bundles
-     "   
-     " see :h vundle for more details or wiki for FAQ 
-     " NOTE: comments after Bundle command are not allowed..
-
-
-
-
-
-
-""""""""""""""""""""""""""""""""""""""""""""""
-" CScope
-""""""""""""""""""""""""""""""""""""""""""""""
-if has("cscope")
-            set csprg=/usr/bin/cscope
-		 	set cst	" 使支持用 Ctrl+]  和 Ctrl+t 快捷键在代码间跳来跳去
-            " check cscope for definition of a symbol before checking ctags:
-            " set to 1 if you want the reverse search order.
-             set csto=1
-			 set nocsverb
-			 set cscopequickfix=s-,c-,d-,i-,t-,e- "设定是否使用quickfix窗口显示cscope结果
-             " add any cscope database in current directory
-             if filereadable("cscope.out")
-                 cs add cscope.out
-             " else add the database pointed to by environment variable
-             elseif $CSCOPE_DB !=""
-                 cs add $CSCOPE_DB
-             endif
-
-             " show msg when any other cscope db added
-             "set cscopeverbose
-			 set csverb
-			 nmap <C-_>s :cs find s <C-R>=expand("<cword>")<CR><CR>:copen<CR>
-			 nmap <C-_>g :cs find g <C-R>=expand("<cword>")<CR><CR>
-			 nmap <C-_>c :cs find c <C-R>=expand("<cword>")<CR><CR>:copen<CR>
-			 nmap <C-_>t :cs find t <C-R>=expand("<cword>")<CR><CR>:copen<CR>
-			 nmap <C-_>e :cs find e <C-R>=expand("<cword>")<CR><CR>:copen<CR>
-			 nmap <C-_>f :cs find f <C-R>=expand("<cfile>")<CR><CR>:copen<CR>
-			 nmap <C-_>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>:copen<CR>
-			 nmap <C-_>d :cs find d <C-R>=expand("<cword>")<CR><CR>:copen<CR>
-
-endif
-
-"设置F12更新tags方法
-map <F12> :call Do_CsTag()<CR>
-function! Do_CsTag()
-    let dir = getcwd()
-    if filereadable("tags")
-        if(has("win32") || has("win95") || has("win64") || has("win16"))
-            let tagsdeleted=delete(dir."\\"."tags")
-        else
-            let tagsdeleted=delete("./"."tags")
-        endif
-        if(tagsdeleted!=0)
-            echohl WarningMsg | echo "Fail to do tags! I cannot delete the tags" | echohl None
-            return
-        endif
-    endif
-    if has("cscope")
-        silent! execute "cs kill -1"
-    endif
-    if filereadable("cscope.files")
-        if(has("win32") || has("win95") || has("win64") || has("win16"))
-            let csfilesdeleted=delete(dir."\\"."cscope.files")
-        else
-            let csfilesdeleted=delete("./"."cscope.files")
-        endif
-        if(csfilesdeleted!=0)
-            echohl WarningMsg | echo "Fail to do cscope! I cannot delete the cscope.files" | echohl None
-            return
-        endif
-    endif
-    if filereadable("cscope.out")
-        if(has("win32") || has("win95") || has("win64") || has("win16"))
-            let csoutdeleted=delete(dir."\\"."cscope.out")
-        else
-            let csoutdeleted=delete("./"."cscope.out")
-        endif
-        if(csoutdeleted!=0)
-            echohl WarningMsg | echo "Fail to do cscope! I cannot delete the cscope.out" | echohl None
-            return
-        endif
-    endif
-    if(executable('ctags'))
-        "silent! execute "!ctags -R --c-types=+p --fields=+S *"
-        silent! execute "!ctags -R --c++-kinds=+p --fields=+iaS --extra=+q ."
-    endif
-    if(executable('cscope') && has("cscope") )
-        if(!(has("win32") || has("win95") || has("win64") || has("win16")))
-            silent! execute "!find . -name '*.h' -o -name '*.c' -o -name '*.cpp' -o -name '*.py' -o -name '*.java' -o -name '*.php' -o -name '*.cs' -o -name '*.inc' > cscope.files"
-        else
-            silent! execute "!dir /s/b *.c,*.cpp,*.h,*.py,*.java,*.php,*.cs,*.inc >> cscope.files"
-        endif
-        silent! execute "!cscope -bq -i cscope.files"
-        execute "normal :"
-        if filereadable("cscope.out")
-            execute "cs add cscope.out"
-        endif
-    endif
-endfunction
-
-"set autochdir "自动切换当前目录为文件所在目录
-""""""""""""""""""""""""""""""""""""""""""""""
-" Taglist
-""""""""""""""""""""""""""""""""""""""""""""""
-nnoremap <silent> <F8> :TlistToggle<CR><CR>  " 按F8按钮，在窗口的左侧出现taglist的窗口,像vc的左侧的workpace
-" :Tlist              调用TagList
-let Tlist_Show_One_File=0                    " 只显示当前文件的tags
-let Tlist_File_Fold_Auto_Close=1			 "非当前文件，函数列表折叠隐藏
-let Tlist_Exit_OnlyWindow=1                  " 如果Taglist窗口是最后一个窗口则退出Vim
-let Tlist_Use_SingleClick=1	                 "单击时跳转
-let Tlist_GainFocus_On_ToggleOpen=1          "打开taglist时获得输入焦点
-let Tlist_Use_Right_Window=0                 " 在右侧窗口中显示
-let Tlist_Process_File_Always=1              "不管taglist窗口是否打开，始终解析文件中的tag
-
-
-
-
-
-
-
-
-""""""""""""""""""""""""""""""""""""""""""""""
-" NERDTree
-""""""""""""""""""""""""""""""""""""""""""""""
-map <silent> <F6> :NERDTreeToggle<cr>      " 使用<F6>键就打开/关闭NERDTree窗口
-let NERDTreeMinimalUI = 1                               " 关闭书签标签('Press ? for help')
-let NERDTreeDirArrows = 1                               "  改变目录结点的显示方式(+/~)
-""""""""""""""""""""""""""""""""""""""""""""""""""
-"winmanager
-"""""""""""""""""""""""""""""""""""""""""""""""
-let g:winManagerWindowLayout='FileExplorer|TagList'
-nmap wm :WMToggle<cr>
-
-
-
-
-"""""""""""""""""""""""""""""""""""""""""""""""
-" Basic 
-"""""""""""""""""""""""""""""""""""""""""""""
-"去掉vi一致性
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" -> vundle install 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set nocompatible
+filetype off
+set rtp+=~/.vim/bundle/vundle/
+call vundle#rc()
 
-"载入文件类型插件
+Bundle 'gmarik/vundle'
+"Bundle 'klen/python-mode'
+set nofoldenable " disable folding
+Bundle 'fisadev/vim-isort'
+Bundle 'kien/ctrlp.vim'
+let g:ctrlp_map = '<c-p>'
+let g:ctrlp_cmd = 'CtrlP'
+let g:ctrlp_working_path_mode='ra'
+let g:vim_isort_map='<C-i>'
+map <C-S-o> :Isort<CR>
+Bundle 'Valloric/YouCompleteMe'
+let g:ycm_autoclose_preview_window_after_completion=1
+noremap <leader>g :YcmCompleter GoToDefinitionElseDeclaration<CR>
+
+" Bundle 'taglist.vim'
+" let Tlist_Ctags_Cmd='ctags'
+" let Tlist_Show_One_File=1
+" let Tlist_WinWidt=28
+" let Tlist_Exit_OnlyWindow=1
+" let Tlist_Use_Right_Window=1
+Bundle 'majutsushi/tagbar'
+let g:tagbar_ctags_bin='ctags'
+let g:tagbar_with=30
+map <F3> :Tagbar<CR>
+map <C-F4> :!ctags -R --c++-kinds=+p --fields=+iaS --extra=+q .<CR>
+noremap <C-\[> <C-T><cr>
+
+
+Bundle 'scrooloose/nerdtree'
+let NERDTreeWinPos='right'
+let NERDTreeWinSize=30
+map <F2> :NERDTreeToggle<CR>
+
+filetype plugin indent on
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" -> general
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" how many lines of history VIM has to remember
+set history=700
+set nu
+
+" Enable filetype plugins
 filetype plugin on
-
-"为特定的文件类型载入相关缩进文件
 filetype indent on
 
-"设置当文件被外部改变的时侯自动读入文件
-if exists("&autoread")
-    set autoread
-endif
+" Set to auto read when a file is changed from the outside
+set autoread
 
-let mapleader=','
-let g:mapleader=','
-"set system clipboard
-nmap <Leader>c "*y
-nmap <Leader>v "*p
+" With a map leader it's possible to do extra key combinations
+" like <leader>w saves the current file
+let mapleader = ","
+let g:mapleader = ","
+
+" Fast saving
+nmap <leader>w :w!<cr>
+
+" :W sudo saves the file 
+" (useful for handling the permission-denied error)
+command W w !sudo tee % > /dev/null
+
+vnoremap <leader>c "+y
+nnoremap <leader>v "+p
+vnoremap <leader>x "+d
 
 
-"""""""""""""""""""""""""""""""""""""""""""""""""
-"用户接口设置
-"""""""""""""""""""""""""""""""""""""""""""""""""
-
-"设置7行在光标的上下，当使用j/k移动的时候
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => VIM user interface
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Set 7 lines to the cursor - when moving vertically using j/k
 set so=7
 
-"打开wild menu
+" Avoid garbled characters in Chinese language windows OS
+let $LANG='en' 
+set langmenu=en
+source $VIMRUNTIME/delmenu.vim
+source $VIMRUNTIME/menu.vim
+
+" Turn on the WiLd menu
 set wildmenu
 
-"忽略编译文件
+" Ignore compiled files
 set wildignore=*.o,*~,*.pyc
-"总是显示当前位置
+if has("win16") || has("win32")
+    set wildignore+=*/.git/*,*/.hg/*,*/.svn/*,*/.DS_Store
+else
+    set wildignore+=.git\*,.hg\*,.svn\*
+endif
+
+"Always show current position
 set ruler
 
-"命令栏的高度
+" Height of the command bar
 set cmdheight=2
 
-"set backspace=2				" make backspace work like most other apps
-set backspace=indent,eol,start " 不设定在插入状态无法用退格键和 Delete 键删除回车符
-set whichwrap+=h,l			"允许backspace和光标键跨越行边界
+" A buffer becomes hidden when it is abandoned
+set hid
 
-"搜索的时候忽略大小写
+" Configure backspace so it acts as it should act
+set backspace=eol,start,indent
+set whichwrap+=<,>,h,l
+
+" In many terminal emulators the mouse works just fine, thus enable it.
+if has('mouse')
+  set mouse=a
+endif
+
+" Ignore case when searching
 set ignorecase
-set smartcase				"搜索的时候更聪明
 
-"set hisearch				"高亮搜索结果
-set incsearch				"设置增量搜索模式
+" When searching try to be smart about cases 
+set smartcase
 
-"高亮显示匹配括号
-set showmatch
+" Highlight search results
+set hlsearch
 
-"设置静音模式
+" Makes search act like search in modern browsers
+set incsearch 
+
+" Don't redraw while executing macros (good performance config)
+set lazyredraw 
+
+" For regular expressions turn magic on
+set magic
+
+" Show matching brackets when text indicator is over them
+set showmatch 
+" How many tenths of a second to blink when matching brackets
+set mat=2
+
+" No annoying sound on errors
 set noerrorbells
 set novisualbell
 set t_vb=
 set tm=500
 
-""""""""""""""""""""""""""""""""""""""""""
-"编辑器的颜色和字体
-""""""""""""""""""""""""""""""""""""""""""
-"设置语法高亮
-syntax enable
-syntax on
+" Add a bit extra margin to the left
+set foldcolumn=1
 
-"设置方案
-colorscheme Tomorrow-Night
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Colors and Fonts
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Enable syntax highlighting
+syntax on 
+
+try
+    colorscheme desert
+catch
+endtry
+
 set background=dark
 
+" Set extra options when running in GUI mode
 if has("gui_running")
-	set guioptions-=T           " 隐藏工具栏
-	set guioptions+=e
-	set t_Co=256
-	set guitablabel=%M\ %t
+    set guioptions-=T
+    set guioptions-=e
+    set t_Co=256
+    set guitablabel=%M\ %t
 endif
 
-"set font=Mono\ 11
-set guifont=Ubuntu\ Mono\ 13
+" Set utf8 as standard encoding and en_US as the standard language
+set encoding=utf8
+
+" Use Unix as the standard file type
+set ffs=unix,dos,mac
 
 
-""""""""""""""""""""""""""""""""""""""""""""
-"文件和备份
-"""""""""""""""""""""""""""""""""""""""""""
-
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Files, backups and undo
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Turn backup off, since most stuff is in SVN, git et.c anyway...
 set nobackup
 set nowb
 set noswapfile
 
-"""""""""""""""""""""""""""""""""""""""""""""
-"Text, tab and indent related
-"""""""""""""""""""""""""""""""""""""""""""""
-                            
-set number
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Text, tab and indent related
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Use spaces instead of tabs
 set expandtab
-"智能tab
+
+" Be smart when using tabs ;)
 set smarttab
-"设置缩进
-set tabstop=4
-set shiftwidth=4
 
-set ai "Auto indent"
-set si "smart indent"
-set wrap "Wrap lines"
+" 1 tab == 4 spaces
+set shiftwidth=2
+set tabstop=2
 
-"设置默认shell
-set shell=bash
-"设置VIM记录的历史数
-set history=400
+" Linebreak on 500 characters
+set lbr
+set tw=500
 
-"设置ambiwidth
-set ambiwidth=double
-"设置文件类型
-set ffs=unix,dos,mac
-
-"修改vimrc后自动生效
-autocmd! bufwritepost .vimrc source ~/.vimrc
+set ai "Auto indent
+set si "Smart indent
+set wrap "Wrap lines
 
 
-"""""""""""""""""""""""""""""""""""""
-"状态栏
-""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""
+" => Visual mode related
+""""""""""""""""""""""""""""""
+" Visual mode pressing * or # searches for the current selection
+" Super useful! From an idea by Michael Naumann
+vnoremap <silent> * :call VisualSelection('f', '')<CR>
+vnoremap <silent> # :call VisualSelection('b', '')<CR>
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Moving around, tabs, windows and buffers
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Treat long lines as break lines (useful when moving around in them)
+map j gj
+map k gk
+
+" Smart way to move between windows
+map <C-j> <C-W>j
+map <C-k> <C-W>k
+map <C-h> <C-W>h
+map <C-l> <C-W>l
+
+" Close the current buffer
+map <leader>bd :Bclose<cr>
+
+" Close all the buffers
+map <leader>ba :1,1000 bd!<cr>
+
+" Useful mappings for managing tabs
+map <leader>tn :tabnew<cr>
+map <leader>to :tabonly<cr>
+map <leader>tc :tabclose<cr>
+map <leader>tm :tabmove 
+map <leader>t :tabnext<cr>
+
+" Let 'tl' toggle between this and the last accessed tab
+let g:lasttab = 1
+nmap <Leader>tl :exe "tabn ".g:lasttab<CR>
+au TabLeave * let g:lasttab = tabpagenr()
+
+
+" Opens a new tab with the current buffer's path
+" Super useful when editing files in the same directory
+map <leader>te :tabedit <c-r>=expand("%:p:h")<cr>/
+
+" Switch CWD to the directory of the open buffer
+map <leader>cd :cd %:p:h<cr>:pwd<cr>
+
+" Specify the behavior when switching between buffers 
+try
+  set switchbuf=useopen,usetab,newtab
+  set stal=2
+catch
+endtry
+
+""""""""""""""""""""""""""""""
+" => Status line
+""""""""""""""""""""""""""""""
+" Always show the status line
 set laststatus=2
+
+" Format the status line
 set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ %l
 
-"可以在buffer的任何地方使用鼠标
-set mouse=a
-set selection=exclusive
-set selectmode=mouse,key
-set completeopt=longest,menu "关掉智能补全时的预览窗口
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => Helper functions
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! CmdLine(str)
+    exe "menu Foo.Bar :" . a:str
+    emenu Foo.Bar
+    unmenu Foo
+endfunction 
+
+function! VisualSelection(direction, extra_filter) range
+    let l:saved_reg = @"
+    execute "normal! vgvy"
+
+    let l:pattern = escape(@", '\\/.*$^~[]')
+    let l:pattern = substitute(l:pattern, "\n$", "", "")
+
+    if a:direction == 'b'
+        execute "normal ?" . l:pattern . "^M"
+    elseif a:direction == 'gv'
+        call CmdLine("Ack \"" . l:pattern . "\" " )
+    elseif a:direction == 'replace'
+        call CmdLine("%s" . '/'. l:pattern . '/')
+    elseif a:direction == 'f'
+        execute "normal /" . l:pattern . "^M"
+    endif
+
+    let @/ = l:pattern
+    let @" = l:saved_reg
+endfunction
 
 
-
-
-
-
-"""""""""""""""""""""""""""""""""""""""""""""
-"快捷键设置
-"""""""""""""""""""""""""""""""""""""""""""""
-"系统剪贴板设置
-
-"设置复制快捷键
-vnoremap <leader>c "+y
-"设置剪切快捷键
-vnoremap <leader>x "+d
-"设置粘贴快捷键
-nnoremap <leader>v "+p
-
-"用Tab跳转到匹配的括号
-map <tab> %
-
-"利用空格键来开关折叠
-set foldenable
-set foldmethod=manual
-nnoremap @=((foldclosed(line('.')<0))<0? 'zc':'zo')
-
-
-"""""""""""""""""""""""""""""""""""""""""
-" Helper function
-"""""""""""""""""""""""""""""""""""""""""
-"return true if paste mode if enabled
+" Returns true if paste mode is enabled
 function! HasPaste()
-	if &paste
-		return 'PASTE MODE '
-	en
-	return ''
+    if &paste
+        return 'PASTE MODE  '
+    endif
+    return ''
+endfunction
+
+" Don't close window, when deleting a buffer
+command! Bclose call <SID>BufcloseCloseIt()
+function! <SID>BufcloseCloseIt()
+   let l:currentBufNum = bufnr("%")
+   let l:alternateBufNum = bufnr("#")
+
+   if buflisted(l:alternateBufNum)
+     buffer #
+   else
+     bnext
+   endif
+
+   if bufnr("%") == l:currentBufNum
+     new
+   endif
+
+   if buflisted(l:currentBufNum)
+     execute("bdelete! ".l:currentBufNum)
+   endif
 endfunction
 
